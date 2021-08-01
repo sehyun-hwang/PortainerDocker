@@ -13,8 +13,10 @@ import { Server as IO } from 'socket.io';
 import { io as IOClient } from 'socket.io-client';
 import got from 'got';
 
-const app = express()
+const app = express();
+export default app;
 
+app
     .use(morgan('combined', {
         skip: ({ ip }) => ip === '127.0.0.1'
     }))
@@ -25,31 +27,39 @@ const app = express()
             "https://nextlab.s3.ap-northeast-2.amazonaws.com",
             'https://dev-kococo.ngrok.io',
         ]
-    }))
-
-    .use(proxy.createProxyMiddleware((path, req) =>
-        /^(libpod|docker)\//.test(req.headers['user-agent']), {
-            target: "http://registry.network:5000",
-        }))
-
-    .use(proxy.createProxyMiddleware((path, { headers }) =>
-        headers.referer === 'https://proxy.hwangsehyun.com/portainer/' ||
-        (headers['user-agent'] || '').startsWith('Go-http-client'), {
-            target: "https://portainer-agent.network:9001",
-            secure: false,
-        }))
+    }));
 
 
+{
+    const onError = (error, req, res, { href }) => res.status(502).json({ error, href });
+
+    app.use(proxy.createProxyMiddleware((path, { headers }) =>
+            headers.referer === 'https://proxy.hwangsehyun.com/portainer/' ||
+            /^Go-http-client|Dockerode/.test(headers['user-agent']), {
+                target: "https://portainer-agent.network:9001",
+                secure: false,
+                ws: true,
+                onError,
+            }))
+
+
+        .use(proxy.createProxyMiddleware((path, req) =>
+            /^(libpod|docker)\//.test(req.headers['user-agent']), {
+                target: "http://registry.network:5000",
+                onError,
+            }));
+}
+
+
+app
     .use((req, res, next) => {
+        //console.log(req);
         const { host } = req.headers;
         const { encrypted } = req.socket;
-
-        encrypted ||
-            (host && host.endsWith('.network')) ||
-            host === 'localhost' ||
-            res.redirect(301, 'https://' + host + req.url);
-        next();
+        (encrypted || (host && host.endsWith('.network')) || host === 'localhost') ?
+        next(): res.redirect(301, 'https://' + host + req.url);
     })
+
 
     .get('/', (req, res) => res.status(204).send())
 
@@ -71,7 +81,7 @@ const app = express()
 
     .use(/^\/nas(.*)/, ({ params }, res) => {
         try {
-            got.stream("http://kbdlab-nas.local:8000" + params[0]).pipe(res);
+            got.stream("http://ds920p.local:8000" + params[0]).pipe(res);
         }
         catch (error) {
             console.log(new Error(error));
@@ -98,14 +108,13 @@ const app = express()
         }*/
     }));
 
-const io_client = IOClient('https://proxy.hwangsehyun.com')
+export const io_client = IOClient('https://proxy.hwangsehyun.com')
     .on('connect', () => console.log('Connected to server'));
 
 function RemoteLog(...data) {
     console.log(...data);
     io_client.emit('Log', ...data);
 }
-
 const io = new IO();
 
 io.on('connection', socket => {
@@ -113,11 +122,11 @@ io.on('connection', socket => {
     socket.on('Log', RemoteLog);
 });
 
-let EV3res, angles;
+/*let EV3res, angles;
 app.get('/ev3', (req, res) => {
     EV3res && clearInterval(EV3res.Interval);
     EV3res = res;
-    res.Interval = setIntervSmaal(() => {
+    res.Interval = setInterval(() => {
         angles && res.write(angles);
         res.write('\n');
     }, 100);
@@ -127,7 +136,7 @@ io.of('/EV3').on('connection', socket => socket.on('Angles', Angles => {
     console.log(Angles);
     if (!EV3res) return;
     angles = JSON.stringify(Angles);
-}));
+}));*/
 
 const Intervals = new Map();
 
@@ -199,7 +208,6 @@ const Handler = (src, dsc) => io.of(src).on('connection', socket => {
 
         '/Container': () => Clients(dsc)
             .then(clients => {
-                console.log(123, clients)
                 socket.on('disconnect', function () {
                     console.log('Clearing interval for', Container);
                     clearInterval(Intervals.get(Container));
@@ -230,9 +238,20 @@ const Listen = (Options = null) => io.listen(
     })
 );
 
-UID ? io.listen(8080) : Listen();
 
-UID || readFile("/cert/cert.pem", (error, cert) => error ? RemoteLog(error) : Listen({
-    key: cert,
-    cert,
-}));
+
+let mainFile = process.argv[1];
+if (!mainFile.endsWith('js'))
+    mainFile += '/index.js';
+
+const isMain = url => mainFile === new URL(url).pathname;
+if (isMain(
+        import.meta.url)) {
+
+    UID ? io.listen(8083) : Listen();
+
+    UID || readFile("/cert/cert.pem", (error, cert) => error ? RemoteLog(error) : Listen({
+        key: cert,
+        cert,
+    }));
+}

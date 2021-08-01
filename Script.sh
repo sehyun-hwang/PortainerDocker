@@ -13,6 +13,7 @@ fi
 
 [ -z $PIP ] || pip3 install $PIP
 
+
 case $1 in
     express)
     wget -O Express.mjs $URL/Docker/Express.js
@@ -31,12 +32,6 @@ case $1 in
     param-server)
     curl $URL/robot/param-server/$2.py > $2.py
     python -u $2.py
-    ;;
-
-    centos)
-    yum update -y
-    #[ `ls /var/lib/apt | wc -l` -eq 0 ] || apt update && apt install -y curl wget zsh
-    sleep infinity
     ;;
 
     *)

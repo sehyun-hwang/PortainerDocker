@@ -1,11 +1,11 @@
-import { hostname as Host } from 'os';
 import _ from "lodash";
+import { HOST } from './CONFIG.js';
 
-const DOMAIN = Host().replace('www.', '');
 
 export const Commands = [{
     Image: "centos",
     name: "centos",
+    Cmd: ["sleep", "infinity"]
 }, {
     Image: 'node:alpine',
     name: "express",
@@ -35,14 +35,16 @@ export const Commands = [{
     },
 }];
 
+export const IMAGES = Commands.map(({ Image }) => Image).concat('alpine alpine/socat docker'.split(' '));
 export const Names = Commands.map(x => x.name);
-console.log({ Names });
+console.table({ IMAGES, Names });
 
-export const Command = (Root, command) => {
+
+export const CommandFactory = (Root, command) => {
     if (command && command.Cmd);
     else {
         const Cmd = ["sh", "Docker.sh"];
-        command && Cmd.push(command.name || command.Labels.APP);
+        command && Cmd.push(command.name || command.Labels && command.Labels.APP);
         command = { ...command, ...{ Cmd } };
     }
 
@@ -55,7 +57,7 @@ export const Command = (Root, command) => {
                 //StorageOpt: { size: '1G' }
             },
             Env: [
-                'DOMAIN=' + DOMAIN
+                'HOST=' + HOST
                 /*'PIP_INDEX_URL=http://apt.network:3141/simple/',
                 'PIP_TRUSTED_HOST=apt.network',*/
             ],
@@ -64,9 +66,8 @@ export const Command = (Root, command) => {
 
     const { Binds } = Return.HostConfig;
     Binds.forEach((x, i) => {
-        if (!x.startsWith('$'))
-            return;
-        Binds[i] = x.replace('$', Root);
+        if (x.startsWith('$'))
+            Binds[i] = x.replace('$', Root);
     });
 
     //console.log(Return);

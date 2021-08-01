@@ -1,5 +1,5 @@
 {
-    "name": "Docker",
+    "name": "portainer-docker",
     "type": "module",
     "exports": {
         ".": "./index.js"

@@ -1,63 +1,52 @@
-import { createInterface as ReadLine } from "readline";
 import Emitter from 'events';
 
-import got from "got";
-import Dockerode from "dockerode";
+import { IsMain } from 'utils';
+import { Docker } from './Portainer.js';
+import { DefaultDockerClass } from './DockerClass.js';
+import DockerClasses from './DockerClasses.js';
 
-import { port } from './ProxyServer.js';
-import Commands from './Server.js';
-import memoizee from 'memoizee';
-
-export const Docker = memoizee((Subdomain = 'nextlab') => new Dockerode({
-    socketPath: undefined,
-    host: "127.0.0.1",
-    port,
-    headers: {
-        'X-Subdomain': Subdomain,
-    },
-}), { length: 1 });
 
 let Unpipe;
+
+function Result(stream, { stdout } = process) {
+    Unpipe && Unpipe();
+    Unpipe = () => stream.unpipe(stdout);
+    setTimeout(Unpipe, 10000);
+    stream.pipe(process.stdout);
+
+    let data;
+    stream.on('data', _data => data = _data);
+
+    const { socket } = stream;
+    const destroy = socket.onerror;
+
+    return new Promise((resolve, reject) => {
+            socket.onerror = error => error.message === 'invalid status code: 1006' || reject(error);
+            socket.onclose = () => resolve(data);
+        })
+
+        .finally(destroy);
+}
+
 
 async function Work(container, emitter) {
     try {
         const Log = (...args) => console.log("Contaner", container.id, "has been", ...args);
         Log("created");
 
-        //stream && stream.end();
-        const data = await container.attach({
-            stream: true,
-            stdin: true,
-            stdout: true,
-            stderr: true,
-        }).then(stream => {
-            const { stdout } = process;
-            emitter.emit('Stream', stream);
+        const stream = await container.attach();
+        Log("attatched to");
+        emitter.emit('Stream', stream);
 
-            Unpipe && Unpipe();
-            Unpipe = () => stream.unpipe(stdout);
-            setTimeout(Unpipe, 10000);
+        Result(stream)
+            .then(result => emitter.emit('Result', result))
+            .catch(error => console.log('rejected', error));
 
-            stream.pipe(stdout);
-            //container.modem.demuxStream(stream, process.stdout, process.stderr);
-
-            Log("attatched to");
-
-            const arr = [];
-            ReadLine(stream).on("line", data => {
-                arr.push(data);
-                arr.length === 5 && arr.shift();
-            });
-
-            return arr;
-        });
-
-        await container.start();
-        Log("started");
+        setImmediate(container.start.bind(container));
         const { StatusCode: Code } = await container.wait();
-        emitter.emit('Code', Code);
         Log("awaited", { Code });
-        emitter.emit('Result', data.shift());
+        emitter.emit('Code', Code);
+
     }
     catch (error) {
         emitter.emit('error', error);
@@ -90,38 +79,39 @@ function IterateDeep(obj, arg) {
 }
 
 
-export default (Options, Subdomain = 'nextlab') => new Promise((resolve, reject) => {
-        let i = 0;
+async function Run(Options, Id) {
+    const dockerClass = DockerClasses.get(Number(Id));
+    const { docker } = dockerClass;
 
-        const Test = () => got(`http://localhost:${port}/_ping`)
-            .then(resolve)
-            .catch(error => {
-                console.log(error);
-                i < 3 ? setTimeout(Test, 1000) : reject(new Error("Dockerode not responding"));
-            });
-        Test();
-    })
-    .then(async() => {
-        const docker = Docker(Subdomain);
-
-        const container = await Commands.then(Commands => docker.createContainer({
-            ...JSON.parse('{"AttachStdin": true, "AttachStdout": true, "AttachStderr": true, "Tty": true, "OpenStdin": true, "StdinOnce": true}'),
-            ...IterateDeep(Commands[Subdomain](Options), docker.Info),
-        }));
-
-        const { id } = container;
-
-        const emitter = new Emitter();
-
-        Work(container, emitter)
-            .catch(console.log);
-
-        setTimeout(() => {
-            emitter.emit('Container', container);
-            emitter.emit('id', id);
-            container.inspect()
-                .then(({ Name }) => emitter.emit('Name', [Name.substr(1), id.substr(0, 12)].join('-')));
-        }, 0);
-
-        return emitter;
+    const container = await docker.createContainer({
+        ...JSON.parse('{"AttachStdin": true, "AttachStdout": true, "AttachStderr": true, "Tty": false, "OpenStdin": true, "StdinOnce": true}'),
+        ...IterateDeep(dockerClass.Command(Options), docker.Info),
     });
+    const { id } = container;
+
+    const emitter = new Emitter();
+    Work(container, emitter)
+        .catch(console.log);
+
+    setImmediate(() => {
+        emitter.emit('Container', container);
+        emitter.emit('id', id);
+        container.inspect()
+            .then(({ Name }) => emitter.emit('Name', [Name.substr(1), id.substr(0, 12)].join('-')));
+    });
+
+    return emitter;
+}
+export { Docker };
+export default Run;
+
+
+IsMain(
+        import.meta.url) && DefaultDockerClass().then(dockerClass => Run({
+        Image: 'hello-world',
+        Cmd: [],
+    }, dockerClass))
+
+
+    .then(emitter => new Promise(resolve => emitter.once('Result', resolve)))
+    .then(data => console.log('Last test message', data.toString()));

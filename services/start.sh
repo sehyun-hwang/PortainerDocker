@@ -1,9 +1,11 @@
 #!/bin/bash
+
 CONTAINERS="pgadmin portainer stream nginx"
 echo Containers: $CONTAINERS
-echo User
+echo -n User
 whoami
 
+sudo modprobe ip_tables
 sleep 10
 docker run --rm hello-world
 sleep 10

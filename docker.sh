@@ -25,7 +25,6 @@ function Password {
 
 ARGS=$2
 
-PORTAINER_AGENT_SECRET=mysecrettoken
 
 case $1 in
     nginx)
@@ -33,7 +32,7 @@ case $1 in
     #--requires pgadmin,stream
     docker run --name nginx -d $ARGS \
     --restart unless-stopped \
-    --net network --add-host host.docker.internal:`hostname -I` \
+    --net network --add-host host.docker.internal:`hostname -I | awk '{print $1}'` \
     -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432  \
     -v /etc/localtime:/etc/localtime:ro \
     -v cert:/cert:ro \
@@ -44,8 +43,6 @@ case $1 in
     ;;
     
     portainer)
-    
-    
     docker run -d --name portainer $ARGS \
     --net network \
     -v portainer_data:/data \
@@ -69,12 +66,12 @@ case $1 in
     
     echo Mounting $SRC
     
-    VERSION=`curl 'https://registry.hub.docker.com/v2/repositories/portainer/agent/tags?page_size=2' | jq -r .results[1].name`
+    IMAGE=`curl "https://registry.hub.docker.com/v2/repositories/portainer/agent/tags?name=linux-$ARCH&page_size=2" | jq -r .results[1].name`
     docker run -d --name portainer-agent $ARGS \
     --restart unless-stopped --net network \
     -v $SRC:$DOCKER \
     --security-opt label=disable \
-    portainer/agent:linux-$ARCH-$VERSION-alpine
+    portainer/agent:$IMAGE
     ;;
     
     pgadmin)
