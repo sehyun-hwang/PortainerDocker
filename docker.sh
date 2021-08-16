@@ -1,7 +1,7 @@
 set -e
 
-#docker ps -aq -f ancestor=ymuski/curl-http3 | xargs docker rm -f
-#docker images --format "{{.Repository}}:{{.Tag}}" | xargs -L1 docker pull
+#docker ps -aq -f ancestor=linaro/tensorflow-arm-neoverse-n1:2.3.0-eigen | xargs docker rm -f
+#docker images --format '{{.Repository}}:{{.Tag}}' | xargs -L1 docker pull
 #docker images -f dangling=true -aq | xargs docker rmi
 
 [ -z "$1" ] && echo Container name argument is required && exit 1
@@ -173,7 +173,7 @@ case $1 in
     docker run -d --name registry \
     --net network --restart unless-stopped \
     -v /Volumes/dev/DockerRegistry:/var/lib/registry \
-    -e REGISTRY_HTTP_HOST=https://nextlab.hwangsehyun.com \
+    -e REGISTRY_HTTP_HOST=https://nextlab.hwangsehyun.com:41443 \
     registry
     ;;
 
@@ -222,7 +222,7 @@ case $1 in
     -p 3142:3142 --net network \
     -w /root -e CACHE=localhost \
     -v /Volumes/dev/apt:/var/cache/apt-cacher-ng \
-    sameersbn/apt-cacher-ng:3.3-20200524
+    jrcichra/apt-cacher-ng:latest
     ;;
 
     webrtc)

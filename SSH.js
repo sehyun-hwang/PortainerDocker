@@ -1,7 +1,7 @@
 import { NodeSSH as SSH } from "node-ssh";
 
 import { IsMain } from "utils";
-import { NODES, port } from './CONFIG.js';
+import { NODE, PORTAINER_ENDPOINT, port } from './CONFIG.js';
 
 
 function Log(prefix, chunk) {
@@ -28,8 +28,11 @@ function Options(stream, Title) {
 
 
 export async function init(params) {
-    console.log('SSH', params);
     const ssh = new SSH();
+    const { sshHost } = params;
+    if (sshHost)
+        params = { ...params, host: sshHost };
+    console.log('SSH', params);
     await ssh.connect(params);
 
     const DESKTOP_BIN = '/usr/local/bin/docker';
@@ -85,8 +88,8 @@ export async function init(params) {
 
 if (IsMain(
         import.meta.url)) {
-    init(Object.assign(NODES.nextlab, {
-        host: 'nextlab.hwangsehyun.com'
+    init(Object.assign(NODE, {
+        host: PORTAINER_ENDPOINT.PublicURL,
     }));
     /*init(Object.assign(NODES.localhost, {
         host: 'www.hwangsehyun.com'

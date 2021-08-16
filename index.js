@@ -2,7 +2,7 @@ import Emitter from 'events';
 
 import { IsMain } from 'utils';
 import { Docker } from './Portainer.js';
-import { DefaultDockerClass } from './DockerClass.js';
+import DockerClass, { DefaultDockerClass } from './DockerClass.js';
 import DockerClasses from './DockerClasses.js';
 
 
@@ -79,8 +79,15 @@ function IterateDeep(obj, arg) {
 }
 
 
-async function Run(Options, Id) {
-    const dockerClass = DockerClasses.get(Number(Id));
+async function Run(Options, arg) {
+    let dockerClass;
+
+    if (typeof arg === 'number')
+        dockerClass = DockerClasses.get(Number(arg));
+    else if (arg instanceof DockerClass)
+        dockerClass = arg;
+
+
     const { docker } = dockerClass;
 
     const container = await docker.createContainer({

@@ -18,18 +18,23 @@ export const PORTAINER_AUTH = JSON.parse(process.env.PORTAINER || '{}');
 
 export const NODES = {
     nextlab: {
-        port: 4022,
+        port: 41022,
         root: '/Volumes/dev',
         cache: 'cache.network',
     },
-    //kbdlab: {},
+    /*ngrok: {
+        sshHost: 'localhost',
+        port: 2222,
+        root: '/Volumes/dev',
+        cache: 'cache.network',
+    },*/
     //iptime: {},
     //localhost: { username: 'centos'},
 };
 
 export const PORTAINER_ENDPOINT = {
-    Id: 14,
-    PublicURL: 'https://nextlab.hwangsehyun.com',
+    Id: 2,
+    PublicURL: 'https://nextlab.hwangsehyun.com:41443',
 };
 
 

@@ -31,9 +31,13 @@ app
 
 
 {
-    const onError = (error, req, res, { href }) => res.status(502).json({ error, href });
+    const onError = (error, req, res, { href }) => {
+        console.log(error);
+        res.status(502).json({ error, href });
+    };
 
     app.use(proxy.createProxyMiddleware((path, { headers }) =>
+
             headers.referer === 'https://proxy.hwangsehyun.com/portainer/' ||
             /^Go-http-client|Dockerode/.test(headers['user-agent']), {
                 target: "https://portainer-agent.network:9001",
@@ -44,7 +48,7 @@ app
 
 
         .use(proxy.createProxyMiddleware((path, req) =>
-            /^(libpod|docker)\//.test(req.headers['user-agent']), {
+            /^(containers|docker)\//.test(req.headers['user-agent']), {
                 target: "http://registry.network:5000",
                 onError,
             }));
@@ -53,10 +57,11 @@ app
 
 app
     .use((req, res, next) => {
-        //console.log(req);
-        const { host } = req.headers;
+        //console.log(req.headers);
+
+        const { host, 'x-forwarded-proto': forwareded } = req.headers;
         const { encrypted } = req.socket;
-        (encrypted || (host && host.endsWith('.network')) || host === 'localhost') ?
+        (encrypted || forwareded === 'https' || (host && host.endsWith('.network')) || host === 'localhost') ?
         next(): res.redirect(301, 'https://' + host + req.url);
     })
 
@@ -208,7 +213,7 @@ const Handler = (src, dsc) => io.of(src).on('connection', socket => {
 
         '/Container': () => Clients(dsc)
             .then(clients => {
-                socket.on('disconnect', function () {
+                socket.on('disconnect', function() {
                     console.log('Clearing interval for', Container);
                     clearInterval(Intervals.get(Container));
                     Intervals.delete(Container);
@@ -233,7 +238,7 @@ const UID = process.getuid();
 const Listen = (Options = null) => io.listen(
     (Options ? https : http).createServer(Options, app)
     .on("error", RemoteLog)
-    .listen(Options ? 443 : 80, "0.0.0.0", function () {
+    .listen(Options ? 443 : 80, "0.0.0.0", function() {
         RemoteLog('Listening:', Options ? 'https' : 'http', this.address());
     })
 );

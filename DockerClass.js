@@ -75,17 +75,19 @@ export default class DockerClass {
                     return Promise.reject(`Container "${x}" does not exsists`);
 
                 Command.Labels.COMMAND = Hash(Command);
-                await docker.createContainer(Command);
-                return () => x.start().then(() => Command.name);
+                return docker.createContainer(Command).then(() => () => x.start().then(() => Command.name));
             }))
 
 
-            .then(async Starts => {
-                ExpressRunning || await StopSocatStartExpress(docker);
+            .then(Starts => {
+                if (!ExpressRunning) {
+                    const Express = Containers.find(({ id }) => id === 'express');
+                    Express.start = StopSocatStartExpress.bind(undefined, docker);
+                }
                 return Promise.all(Starts.map(x => x()));
             })
 
-            .then((...args) => colog.success('Successfully started:', ...args));
+            .then((...args) => colog.success('Successfully started: ' + args));
     }
 
 
@@ -149,7 +151,7 @@ export default class DockerClass {
                 if (!Filtered.length)
                     return colog.success('All containers are running. No action required.');
 
-                console.log("Trying container(s):", ...Filtered.map(x => x.id));
+                colog.answer("Trying container(s):" + Filtered.reduce((accum, { id }) => accum + ' ' + id, ''));
                 const Express = Data.find(({ Names: [Name] }) => Name === '/express');
                 console.log('Express state:', Express && Express.State);
                 return Pull(docker)
