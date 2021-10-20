@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONTAINERS="pgadmin portainer stream nginx"
+CONTAINERS="pgadmin portainer stream registry-browser nginx"
 echo Containers: $CONTAINERS
 echo -n User
 whoami

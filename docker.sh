@@ -27,31 +27,47 @@ ARGS=$2
 
 
 case $1 in
+    dev)
+    docker run -it --rm --pod nginx-pod --name dev \
+        -w /mnt -v node_modules:/mnt/node_modules -v $PWD:/mnt \
+        -v ~/.bash_history:/root/.bash_history:z \
+        -v ~/.cache/yarn/v6:/usr/local/share/.cache/yarn/v6 \
+        --security-opt label=disable node:alpine sh
+    ;;
+    
+    
     nginx)
-    docker start pgadmin portainer stream 
-    #--requires pgadmin,stream
+    docker start pgadmin portainer stream registry-browser
+    
+    docker pod ls -f=status=degraded -q | grep nginx-pod && docker pod rm nginx-pod
+    docker pod create --name nginx-pod --net network \
+    --add-host host.containers.internal:`hostname -I | awk '{print $1}'` \
+    -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432 || true
+    
     docker run --name nginx -d $ARGS \
     --restart unless-stopped \
-    --net network --add-host host.docker.internal:`hostname -I | awk '{print $1}'` \
-    -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432  \
+    --pod nginx-pod \
     -v /etc/localtime:/etc/localtime:ro \
     -v cert:/cert:ro \
     -v /mnt/Docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
     -v /mnt/Docker/nginx:/etc/nginx/conf:ro \
-    -v /mnt:/mnt:ro -v /volatile/src:/mnt/volatile2:ro \
+    -v /mnt:/mnt:ro -v /volatile/src:/volatile:z \
     ranadeeppolavarapu/nginx-http3
     ;;
+    
     
     portainer)
     docker run -d --name portainer $ARGS \
     --net network \
-    -v portainer_data:/data \
+    -v /mnt/Docker/portainer:/data \
     portainer/portainer-ce:alpine
     
     docker kill -s HUP nginx
     ;;
     
+    
     portainer-agent)
+    #sudo systemctl disable firewalld
     
     ARCH=arm64
     [ `uname -m` = x86_64 ] && ARCH=amd64
@@ -74,6 +90,7 @@ case $1 in
     portainer/agent:$IMAGE
     ;;
     
+    
     pgadmin)
     docker run --name pgadmin -d $ARGS \
     --net network --restart unless-stopped \
@@ -85,11 +102,24 @@ case $1 in
     docker kill -s HUP nginx
     ;;
 
+
     stream)
-    docker run --name stream -d \
+    docker run --name stream -d  $ARGS \
     --net network -p 8081:80 \
     shurco/nginx-push-stream-module
     
+    docker kill -s HUP nginx
+    ;;
+    
+    
+    registry-browser)
+    docker run --name registry-browser -d $ARGS \
+    --net network \
+    -e DOCKER_REGISTRY_URL=https://nextlab.hwangsehyun.com:41443 \
+    -e SCRIPT_NAME=/registrybrowser \
+    -e RAILS_RELATIVE_URL_ROOT=/registrybrowser \
+    klausmeyer/docker-registry-browser
+
     docker kill -s HUP nginx
     ;;
     
@@ -102,17 +132,17 @@ case $1 in
     -c 'sleep infinity'
     ;;
 
+
     code)
     docker run -it --name code --net network \
-      -v /mnt/Docker/code-config:/home/coder/.config/code-server \
-      -v /mnt:/home/coder/project \
-      -p 8080:8080 \
-       -u root:root \
-       -e "DOCKER_USER=$USER" \
-        codercom/code-server
-      #
-
+    -v /mnt/Docker/code-config:/home/coder/.config/code-server \
+    -v /mnt:/home/coder/project \
+    -p 8080:8080 \
+    -u root:root \
+    -e "DOCKER_USER=$USER" \
+    codercom/code-server
     ;;
+
 
     cctv)
     docker run --name cctv -d \
@@ -122,15 +152,19 @@ case $1 in
     rtp://18.138.27.6:5000
     ;;
 
+
     s3)
     docker run -d --name s3 \
     --net network \
     --restart unless-stopped \
-    -w /root -v /Volumes/dev/node_modules:/root/node_modules:ro \
-    -v /Volumes/dev/S3:/root/data \
+    -w /mnt \
+    -v /Volumes/dev/node_modules:/mnt/node_modules:ro -v /Volumes/dev/package.json:/package.json:ro  \
+    -v /Volumes/dev/S3:/mnt/data \
     node:alpine \
-    sh -c 'wget https://www.hwangsehyun.com/Docker/s3rver.js -O main.mjs && node main.mjs'
+    node node_modules/s3rver/bin/s3rver.js -a 0.0.0.0 -d data \
+    --no-vhost-buckets --configure-bucket hwangsehyun --configure-bucket nextlab
     ;;
+
 
     php)
     docker run --name php -d \
@@ -152,7 +186,6 @@ case $1 in
     ;;
 
 
-
     parallels-backup)
     docker run --name parallels-backup -d \
     --restart always \
@@ -160,6 +193,7 @@ case $1 in
     -v /Volumes/Data/Parallels:/root/src:ro -v /Volumes/dev/Parallels:/root/dsc \
     alpine sh Docker.sh parallels
     ;;
+
 
     meshlab)
     docker run -d --name meshlab \
@@ -169,6 +203,7 @@ case $1 in
     meshlab
     ;;
 
+
     registry)
     docker run -d --name registry \
     --net network --restart unless-stopped \
@@ -177,12 +212,14 @@ case $1 in
     registry
     ;;
 
+
     docker-hub)
     docker run -d --name docker-hub \
     --restart unless-stopped \
     -p 5000:5000 -v /Volumes/dev/DockerHub:/var/lib/registry \
     -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io \
     registry;;
+
 
     mongo)
     Password
@@ -191,6 +228,7 @@ case $1 in
     -p 27017:27017  \
     -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=$REPLY \
     mongo;;
+
 
     mysql)
     Password
@@ -207,6 +245,7 @@ case $1 in
     tasubo/boilerpipe-api
     ;;
 
+
     cache)
     docker run -d --name cache \
     --restart unless-stopped \
@@ -215,6 +254,7 @@ case $1 in
     -v /Volumes/dev/nginx.conf:/etc/nginx/nginx.conf \
     nginx:alpine
     ;;
+
 
     apt)
     docker run -d --name apt --init \
@@ -225,16 +265,24 @@ case $1 in
     jrcichra/apt-cacher-ng:latest
     ;;
 
-    webrtc)
-    docker run -d --name webrtc \
-    --restart unless-stopped \
-    --net host \
-    webrtc
 
+    ssh)
+    docker run -it --rm \
+    --name=openssh-server \
+    -e PUBLIC_KEY=yourpublickey `#optional` \
+    -e PUBLIC_KEY_FILE=/path/to/file `#optional` \
+    -e PUBLIC_KEY_DIR=/path/to/directory/containing/_only_/pubkeys `#optional` \
+    -e PASSWORD_ACCESS=false `#optional` \
+    -p 2222:2222 \
+    -v /path/to/appdata/config:/config \
+    --restart unless-stopped \
+    linuxserver/openssh-server
     ;;
+
 
     *)
     echo $1 is not a valid container name
 esac
 
+docker logs --tail 100 $1
 docker ps
