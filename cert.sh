@@ -1,5 +1,6 @@
 set -e
 
+sudo docker run -it --rm -v cert:/etc/letsencrypt certbot/dns-route53 certificates
 #sudo docker run -it --rm -v cert:/etc/letsencrypt certbot/dns-route53 certonly -d '*.hwangsehyun.com' -d hwangsehyun.com --dns-route53
 
 [ -z "$1" ] || SSH="ssh $@"

@@ -88,7 +88,7 @@ export function Pull(docker) {
 
             followProgress(stream,
                 (error, output) => error ? reject(error) : resolve(output.pop().status),
-                console.log.bind(undefined, host));
+                ({ status, id, progress }) => console.log(host, status, id, progress));
             return promise;
         })))
 

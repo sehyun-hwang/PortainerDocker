@@ -48,7 +48,7 @@ app
 
 
         .use(proxy.createProxyMiddleware((path, req) =>
-            /^(containers|docker)\//.test(req.headers['user-agent']), {
+            /^(containers|docker|Buildah)\//.test(req.headers['user-agent']) || req.headers['user-agent'].startsWith('Faraday'), {
                 target: "http://registry.network:5000",
                 onError,
             }));
@@ -213,7 +213,7 @@ const Handler = (src, dsc) => io.of(src).on('connection', socket => {
 
         '/Container': () => Clients(dsc)
             .then(clients => {
-                socket.on('disconnect', function() {
+                socket.on('disconnect', function () {
                     console.log('Clearing interval for', Container);
                     clearInterval(Intervals.get(Container));
                     Intervals.delete(Container);
@@ -238,7 +238,7 @@ const UID = process.getuid();
 const Listen = (Options = null) => io.listen(
     (Options ? https : http).createServer(Options, app)
     .on("error", RemoteLog)
-    .listen(Options ? 443 : 80, "0.0.0.0", function() {
+    .listen(Options ? 443 : 80, "0.0.0.0", function () {
         RemoteLog('Listening:', Options ? 'https' : 'http', this.address());
     })
 );

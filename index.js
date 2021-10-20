@@ -49,6 +49,7 @@ async function Work(container, emitter) {
 
     }
     catch (error) {
+        -
         emitter.emit('error', error);
         console.log(error);
     }
