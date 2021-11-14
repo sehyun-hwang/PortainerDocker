@@ -1,6 +1,8 @@
 node_modules/
-dnsname
 
+dnsname
 portainer
+redisinsight
+
 PortainerToken.txt
 ssh/id_rsa*

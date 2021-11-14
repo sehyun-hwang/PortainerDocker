@@ -34,16 +34,16 @@ case $1 in
         -v ~/.cache/yarn/v6:/usr/local/share/.cache/yarn/v6 \
         --security-opt label=disable node:alpine sh
     ;;
-    
-    
+
+
     nginx)
-    docker start pgadmin portainer stream registry-browser
-    
+    docker start pgadmin portainer stream registry-browser redisinsight
+
     docker pod ls -f=status=degraded -q | grep nginx-pod && docker pod rm nginx-pod
     docker pod create --name nginx-pod --net network \
     --add-host host.containers.internal:`hostname -I | awk '{print $1}'` \
-    -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432 || true
-    
+    -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432 -p 6379:6379 || true
+
     docker run --name nginx -d $ARGS \
     --restart unless-stopped \
     --pod nginx-pod \
@@ -54,24 +54,31 @@ case $1 in
     -v /mnt:/mnt:ro -v /volatile/src:/volatile:z \
     ranadeeppolavarapu/nginx-http3
     ;;
-    
-    
+
+
+    redisinsight)
+    docker run --name redisinsight -d $ARGS \
+    --net network -u root \
+    -v /mnt/Docker/redisinsight:/db:z \
+    redislabs/redisinsight
+    ;;
+ 
     portainer)
     docker run -d --name portainer $ARGS \
     --net network \
     -v /mnt/Docker/portainer:/data \
     portainer/portainer-ce:alpine
-    
+
     docker kill -s HUP nginx
     ;;
-    
-    
+
+
     portainer-agent)
     #sudo systemctl disable firewalld
-    
+
     ARCH=arm64
     [ `uname -m` = x86_64 ] && ARCH=amd64
-    
+
     DOCKER=/var/run/docker.sock
     PODMAN=/run/user/1000/podman/podman.sock
     SRC=$DOCKER
@@ -79,9 +86,9 @@ case $1 in
         SRC=$PODMAN
         systemctl --user is-active podman.socket || systemctl --user restart podman.socket
     }
-    
+
     echo Mounting $SRC
-    
+
     IMAGE=`curl "https://registry.hub.docker.com/v2/repositories/portainer/agent/tags?name=linux-$ARCH&page_size=2" | jq -r .results[1].name`
     docker run -d --name portainer-agent $ARGS \
     --restart unless-stopped --net network \
@@ -89,8 +96,8 @@ case $1 in
     --security-opt label=disable \
     portainer/agent:$IMAGE
     ;;
-    
-    
+
+
     pgadmin)
     docker run --name pgadmin -d $ARGS \
     --net network --restart unless-stopped \
@@ -98,7 +105,7 @@ case $1 in
     -e SCRIPT_NAME=/pgadmin \
     -e PGADMIN_DEFAULT_EMAIL=hwanghyun3@gmail.com -e PGADMIN_DEFAULT_PASSWORD=gTff8ULka4NuJsV \
     dpage/pgadmin4
-    
+
     docker kill -s HUP nginx
     ;;
 
@@ -107,11 +114,11 @@ case $1 in
     docker run --name stream -d  $ARGS \
     --net network -p 8081:80 \
     shurco/nginx-push-stream-module
-    
+
     docker kill -s HUP nginx
     ;;
-    
-    
+
+
     registry-browser)
     docker run --name registry-browser -d $ARGS \
     --net network \
@@ -122,7 +129,8 @@ case $1 in
 
     docker kill -s HUP nginx
     ;;
-    
+
+
     aws)
     docker run --name aws -d \
     --restart unless-stopped \
@@ -173,6 +181,7 @@ case $1 in
     -v php-aws:/mnt/ptais/php-aws -v /mnt/ptais:/mnt/ptais \
     bitnami/php-fpm
     ;;
+    
 
     cloud9)
     docker run --name cloud9 -d \
