@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONTAINERS="pgadmin portainer stream registry-browser nginx"
+CONTAINERS="pgadmin portainer stream registry-browser nginx redisinsight"
 echo Containers: $CONTAINERS
 echo -n User
 whoami
@@ -16,7 +16,7 @@ tr -d '[]' | while read line; do
     echo $line
     CONTAINER=`echo $CONTAINERS | awk '{print $'$i'}'`
     echo $i $CONTAINER
-    
+
     docker rm -f $CONTAINER && $line
     (( i++ ))
     echo ======================================================

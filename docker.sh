@@ -51,7 +51,7 @@ case $1 in
     -v cert:/cert:ro \
     -v /mnt/Docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
     -v /mnt/Docker/nginx:/etc/nginx/conf:ro \
-    -v /mnt:/mnt:ro -v /volatile/src:/volatile:z \
+    -v /mnt:/mnt:ro -v /volatile/src:/volatile:ro \
     ranadeeppolavarapu/nginx-http3
     ;;
 
@@ -59,10 +59,10 @@ case $1 in
     redisinsight)
     docker run --name redisinsight -d $ARGS \
     --net network -u root \
-    -v /mnt/Docker/redisinsight:/db:z \
+    -v redisinsight:/db \
     redislabs/redisinsight
     ;;
- 
+
     portainer)
     docker run -d --name portainer $ARGS \
     --net network \
@@ -181,7 +181,7 @@ case $1 in
     -v php-aws:/mnt/ptais/php-aws -v /mnt/ptais:/mnt/ptais \
     bitnami/php-fpm
     ;;
-    
+
 
     cloud9)
     docker run --name cloud9 -d \
@@ -196,11 +196,10 @@ case $1 in
 
 
     parallels-backup)
-    docker run --name parallels-backup -d \
-    --restart always \
-    -w /root -v /Volumes/dev/Docker.sh:/root/Docker.sh \
-    -v /Volumes/Data/Parallels:/root/src:ro -v /Volumes/dev/Parallels:/root/dsc \
-    alpine sh Docker.sh parallels
+    docker run --name parallels-backup -it \
+    --restart unless-stopped \
+    -v /Volumes/Data/Parallels:/src:ro -v /Volumes/dev/Parallels:/dsc \
+    alpine sh -c 'wget https://www.hwangsehyun.com/Docker/parallels-backup.sh -O script.sh; sh script.sh'
     ;;
 
 
