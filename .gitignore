@@ -1,0 +1,8 @@
+node_modules/
+
+dnsname
+portainer
+redisinsight
+
+PortainerToken.txt
+ssh/id_rsa*

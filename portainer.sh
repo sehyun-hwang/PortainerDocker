@@ -1,0 +1,2 @@
+curl localhost:9000/api/endpoints \
+-H 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJuZXh0bGFiIiwicm9sZSI6MSwiZXhwIjoxNjI0MjExNjA3fQ.WSWyDFamq_dvYFhcZgjeKZaZ67m1O6pQbKGPo86FI04'
