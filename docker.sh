@@ -58,7 +58,7 @@ case $1 in
 
     redisinsight)
     docker run --name redisinsight -d $ARGS \
-    --net network -u root \
+    --net network \
     -v redisinsight:/db \
     redislabs/redisinsight
     ;;
@@ -293,4 +293,3 @@ case $1 in
 esac
 
 docker logs --tail 100 $1
-docker ps
