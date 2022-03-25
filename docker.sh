@@ -41,7 +41,6 @@ case $1 in
 
     docker pod ls -f=status=degraded -q | grep nginx-pod && docker pod rm nginx-pod
     docker pod create --name nginx-pod --net network \
-    --add-host host.containers.internal:`hostname -I | awk '{print $1}'` \
     -p 80:80 -p 443:443/tcp -p 443:443/udp -p 5432:5432 -p 6379:6379 || true
 
     docker run --name nginx -d $ARGS \
