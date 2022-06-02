@@ -3,5 +3,9 @@
     "type": "module",
     "exports": {
         ".": "./index.js"
+    },
+    "dependencies": {
+        "expiry-map": "^2.0.0",
+        "p-memoize": "^6.0.1"
     }
 }
