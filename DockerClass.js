@@ -16,7 +16,6 @@ const { IsMain, } = PathParser(
 
 export default class DockerClass {
 
-
     constructor(docker, Params) {
         const { PublicURL } = docker;
         Params.host = new URL(PublicURL).hostname;
@@ -118,11 +117,11 @@ export default class DockerClass {
 
 
     Run() {
-        const { docker, Commands, } = this;
+        const { docker, Command, Commands, } = this;
 
         return this.ListContainers()
 
-            .then(Script.bind(undefined, docker))
+            .then(Script.bind(undefined, docker, Command))
 
             .then(Data => {
                 console.info("Filter");
@@ -154,16 +153,20 @@ export default class DockerClass {
                 colog.answer("Trying container(s):" + Filtered.reduce((accum, { id }) => accum + ' ' + id, ''));
                 const Express = Data.find(({ Names: [Name] }) => Name === '/express');
                 console.log('Express state:', Express && Express.State);
+                
                 return Pull(docker)
                     .then(() => this.main(Filtered, Express && Express.State === 'running'));
             })
 
             .finally(() => console.info("Finally"));
     }
+
 }
 
 
 export const DefaultDockerClass = () =>
-    import ('./PortainerDocker.js')
+    import('./PortainerDocker.js')
     .then(({ DefaultPortainerDocker }) => new DockerClass(DefaultPortainerDocker(), NODE));
+    
+    
 IsMain && DefaultDockerClass().then(dockerClass => dockerClass.Run());
