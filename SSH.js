@@ -89,7 +89,7 @@ export async function init(params) {
 if (IsMain(
         import.meta.url)) {
     init(Object.assign(NODE, {
-        host: PORTAINER_ENDPOINT.PublicURL,
+        host: new URL(PORTAINER_ENDPOINT.PublicURL).hostname,
     }));
     /*init(Object.assign(NODES.localhost, {
         host: 'www.hwangsehyun.com'

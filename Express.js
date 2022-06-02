@@ -1,3 +1,5 @@
+process.env.DEBUG='http-proxy-middleware*';
+
 import { readFile } from "fs";
 import { promises as _dns } from 'dns';
 const { lookup: dns } = _dns;

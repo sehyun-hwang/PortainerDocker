@@ -1,11 +1,11 @@
 {
     "Servers": {
         "1": {
-            "Name": "Aurora",
+            "Name": "Aurora v2",
             "Group": "Servers",
             "Port": 5432,
             "Username": "postgres",
-            "Host": "aurora.vpc",
+            "Host": "postgres.beyondwork.co.kr",
             "SSLMode": "prefer",
             "MaintenanceDB": "misc",
             "SSLCert": "<STORAGE_DIR>/.postgresql/postgresql.crt",

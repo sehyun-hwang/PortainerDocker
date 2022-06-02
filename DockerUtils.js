@@ -1,11 +1,16 @@
 import { promises as fs } from "fs";
 import { createHash } from 'crypto';
 
+import ExpiryMap from 'expiry-map';
+import pMemoize from 'p-memoize';
+import Dockerode from 'dockerode';
 
+import { IsMain } from "utils";
 import { NODE, HOST, dir, RERUN } from './CONFIG.js';
 import { IMAGES } from './Command.js';
-export const Hash = data => createHash('md5').update(JSON.stringify(data)).digest('hex');
 
+
+export const Hash = data => createHash('md5').update(JSON.stringify(data)).digest('hex');
 
 
 export function StopSocatStartExpress(docker) {
@@ -44,7 +49,7 @@ export function StopSocatStartExpress(docker) {
 }
 
 
-export async function Script(docker, Data) {
+export async function Script(docker, Command, Data) {
     const Container = Array.isArray(Data) ? Data.find(x => x.Names[0] === "/script") : true;
     const SCRIPT = await fs.readFile(dir + "/Script.sh")
         .then(data => {
@@ -63,7 +68,7 @@ export async function Script(docker, Data) {
     Container && await docker.getContainer("script").remove()
         .catch(console.log);
 
-    const Params = this.Command({
+    const Params = Command({
         Image: "alpine",
         name: "script",
         Labels: { SCRIPT },
@@ -72,16 +77,48 @@ export async function Script(docker, Data) {
     const { Binds } = Params.HostConfig;
     Binds[0] = Binds[0].replace(':ro', '');
 
-    return docker.createContainer(Params)
-        .then(Container => Container.start())
-        .then(() => Data);
+    await docker.createContainer(Params)
+        .then(Container => Container.start());
+    return Data;
 }
 
 
-export function Pull(docker) {
+const checkLatestDigests = pMemoize(image => {
+    let [repository, tag='latest'] = image.split(':');
+    if (!repository.includes('/'))
+        repository = 'library/' + repository;
+    console.log('Searching Docker Hub', { repository, tag });
+
+    return fetch(`https://registry.hub.docker.com/v2/repositories/${repository}/tags?` + new URLSearchParams({
+            name: tag || 'latest',
+            page_size: 1,
+        }))
+        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(({ results: [{ images }] }) => [image, new Set(images.map(({ digest }) => digest))]);
+
+}, {
+    cache: new ExpiryMap(60 * 1000),
+});
+
+
+export async function Pull(docker) {
+    let [localImages, ...latestDigests] = await Promise.all([
+        docker.listImages(),
+        ...IMAGES.map(checkLatestDigests)
+    ]);
+    localImages = localImages.map(({ Digests }) => Digests);
+    latestDigests = Object.fromEntries(latestDigests);
+    //console.log(localImages, latestDigests);
+
+    const pullRequests = IMAGES.filter(image => localImages.some(localImage => latestDigests[image].has(localImage)));
+
+    if (!pullRequests.length)
+        return console.log('All images are up to date');
+
+    console.log('Pulling', pullRequests);
     const { followProgress, host } = docker.modem;
 
-    return Promise.all(IMAGES.map(Image => docker.pull(Image).then(stream => {
+    return Promise.all(pullRequests.map(Image => docker.pull(Image).then(stream => {
             let args;
             const promise = new Promise((..._args) => args = _args);
             const [resolve, reject] = args;
@@ -93,4 +130,12 @@ export function Pull(docker) {
         })))
 
         .then(console.log);
+}
+
+
+
+if (IsMain(
+        import.meta.url)) {
+    checkLatestDigests(IMAGES[0]);
+    Pull(new Dockerode());
 }
