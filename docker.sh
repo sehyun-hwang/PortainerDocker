@@ -63,6 +63,16 @@ case $1 in
     redislabs/redisinsight
     ;;
 
+
+    redisinsight-2)
+    docker create --name redisinsight-arm nextlab.hwangsehyun.com:41443/redisinsight:arm
+    docker cp redisinsight-arm:/usr/src/app/redisinsight/ui/dist nginx:/redisinsight2
+    docker run --name redisinsight-2 \
+    --net network \
+    -e NODE_ENV=development \
+    redisinsight:api
+    ;;
+
     portainer)
     docker run -d --name portainer $ARGS \
     --net network \
