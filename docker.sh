@@ -29,10 +29,10 @@ ARGS=$2
 case $1 in
     dev)
     docker run -it --rm --pod nginx-pod --name dev \
-        -w /mnt -v node_modules:/mnt/node_modules -v $PWD:/mnt \
-        -v ~/.bash_history:/root/.bash_history:z \
-        -v ~/.cache/yarn/v6:/usr/local/share/.cache/yarn/v6 \
-        --security-opt label=disable node:alpine sh
+    -w /mnt -v node_modules:/mnt/node_modules -v $PWD:/mnt \
+    -v ~/.bash_history:/root/.bash_history:z \
+    -v ~/.cache/yarn/v6:/usr/local/share/.cache/yarn/v6 \
+    --security-opt label=disable node:alpine sh
     ;;
 
 
@@ -51,6 +51,7 @@ case $1 in
     -v /mnt/Docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
     -v /mnt/Docker/nginx:/etc/nginx/conf:ro \
     -v /mnt:/mnt:ro -v /volatile/src:/volatile:ro \
+    --log-opt max-size=100m \
     ranadeeppolavarapu/nginx-http3
     ;;
 
@@ -62,9 +63,20 @@ case $1 in
     redislabs/redisinsight
     ;;
 
+
+    redisinsight-2)
+    docker create --name redisinsight-arm nextlab.hwangsehyun.com:41443/redisinsight:arm
+    docker cp redisinsight-arm:/usr/src/app/redisinsight/ui/dist nginx:/redisinsight2
+    docker run --name redisinsight-2 \
+    --net network \
+    -e NODE_ENV=development \
+    redisinsight:api
+    ;;
+
     portainer)
     docker run -d --name portainer $ARGS \
     --net network \
+    --security-opt label=disable \
     -v /mnt/Docker/portainer:/data \
     portainer/portainer-ce:alpine
 
@@ -150,6 +162,12 @@ case $1 in
     codercom/code-server
     ;;
 
+    rtsp-server)
+    docker run -d --name rtsp-server \
+    -e RTSP_PROTOCOLS=tcp \
+    -p 8554:8554 -p 1935:1935 -p 8888:8888 \
+    aler9/rtsp-simple-server
+    ;;
 
     cctv)
     docker run --name cctv -d \
@@ -269,21 +287,7 @@ case $1 in
     -p 3142:3142 --net network \
     -w /root -e CACHE=localhost \
     -v /Volumes/dev/apt:/var/cache/apt-cacher-ng \
-    jrcichra/apt-cacher-ng:latest
-    ;;
-
-
-    ssh)
-    docker run -it --rm \
-    --name=openssh-server \
-    -e PUBLIC_KEY=yourpublickey `#optional` \
-    -e PUBLIC_KEY_FILE=/path/to/file `#optional` \
-    -e PUBLIC_KEY_DIR=/path/to/directory/containing/_only_/pubkeys `#optional` \
-    -e PASSWORD_ACCESS=false `#optional` \
-    -p 2222:2222 \
-    -v /path/to/appdata/config:/config \
-    --restart unless-stopped \
-    linuxserver/openssh-server
+    jrcichra/apt-cacher-ng
     ;;
 
 
