@@ -65,12 +65,14 @@ case $1 in
 
 
     redisinsight-2)
-    docker create --name redisinsight-arm nextlab.hwangsehyun.com:41443/redisinsight:arm
-    docker cp redisinsight-arm:/usr/src/app/redisinsight/ui/dist nginx:/redisinsight2
-    docker run --name redisinsight-2 \
+    #docker create --name redisinsight-arm nextlab.hwangsehyun.com:41443/redisinsight:arm
+    #docker cp redisinsight-arm:/usr/src/app/redisinsight/ui/dist nginx:/redisinsight2
+    docker run -d --name redisinsight-2 $ARGS \
     --net network \
     -e NODE_ENV=development \
     redisinsight:api
+
+    docker kill -s HUP nginx
     ;;
 
     portainer)
@@ -165,7 +167,7 @@ case $1 in
     rtsp-server)
     docker run -d --name rtsp-server \
     -e RTSP_PROTOCOLS=tcp \
-    -p 8554:8554 -p 1935:1935 -p 8888:8888 \
+    -p 8554:8554 -p 1935:1935 \
     aler9/rtsp-simple-server
     ;;
 
