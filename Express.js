@@ -50,7 +50,7 @@ app
 
 
         .use(proxy.createProxyMiddleware((path, req) =>
-            /^(containers|docker|Buildah)\//.test(req.headers['user-agent']) || req.headers['user-agent'].startsWith('Faraday'), {
+            /^(containers|docker|containerd|Buildah|skopeo)\//.test(req.headers['user-agent']) || req.headers['user-agent'].startsWith('Faraday'), {
                 target: "http://registry.network:5000",
                 onError,
             }));
@@ -70,50 +70,12 @@ app
 
     .get('/', (req, res) => res.status(204).send())
 
-    .use('/onvif', proxy.createProxyMiddleware({
-        changeOrigin: true,
-        target: "http://192.168.10.176",
-    }))
-
-    .use('/meshlab', proxy.createProxyMiddleware({
-        target: "http://meshlab.network:8000",
-    }))
-
     .use('/s3', proxy.createProxyMiddleware({
         target: "http://s3.network:4568",
         pathRewrite: {
             '^/s3': '/',
         },
     }))
-
-    .use(/^\/nas(.*)/, ({ params }, res) => {
-        try {
-            got.stream("http://ds920p.local:8000" + params[0]).pipe(res);
-        }
-        catch (error) {
-            console.log(new Error(error));
-            res.status(500).json(error);
-        }
-    })
-
-    .use("/3dprinter", proxy.createProxyMiddleware({
-        target: "http://192.168.0.210",
-        changeOrigin: true,
-        pathRewrite: {
-            '^/3dprinter': '/',
-        },
-    }))
-
-    .use('/_kiwi', (req, res, next) => req._parsedUrl.pathname === '/_kiwi' ? res.redirect('/_kiwi/index.do') : next())
-
-    .use("/_*", proxy.createProxyMiddleware({
-        target: "https://devcms.yonsei.ac.kr",
-        changeOrigin: true,
-        /*onProxyReq: proxyReq => {
-            proxyReq.setHeader("X-Script-Name", '/pgadmin');
-            proxyReq.setHeader("X-Scheme", "https");
-        }*/
-    }));
 
 export const io_client = IOClient('https://proxy.hwangsehyun.com')
     .on('connect', () => console.log('Connected to server'));
