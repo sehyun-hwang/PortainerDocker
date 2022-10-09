@@ -1,11 +1,17 @@
 <!doctype html>
+
+<!doctype html>
 <html lang="en">
 
     <head>
         <title>RedisInsight</title>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
         <link rel="icon" href="/redisinsight/static/images/favicon.ico" type="image/x-icon">
+        <script>
+            window.__RIPROXYPATH__ = '/redisinsight';
+        </script>
+        <script defer="defer" src="/redisinsight/static/app/bundle.7efcec36bb875e95d308.js"></script>
     </head>
 
     <body>
@@ -14,28 +20,6 @@
             // Stub for calls to gtag(). If GA is enabled, this function will
             // be replaced with the actual gtag() function.
             window.gtag = function () {};
-
-
-            fetch('/redisinsight/static/app/bundle.678e79d18a9624396d6a.js')
-                .then(res => res.text())
-                .then(text => {
-                    text = text.replace(/\/(static|api)/g, '/redisinsight/$1')
-                        .replaceAll('"/instance', '"/redisinsight/instance');
-
-                    const src = URL.createObjectURL(new Blob([text], {
-                        type: 'text/javascript'
-                    }));
-
-                    const script = document.createElement('script');
-                    script.src = src;
-                    document.body.appendChild(script);
-                    return new Promise(resolve => script.addEventListener('load', resolve));
-                })
-                .then(() => window.dispatchEvent(new Event('load')))
-                .catch(error => {
-                    console.error(error);
-                    alert(error);
-                });
         </script>
     </body>
 

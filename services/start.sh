@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONTAINERS="pgadmin portainer stream registry-browser redisinsight nginx"
+CONTAINERS="pgadmin portainer stream registry-browser redisinsight redisinsight-2 nginx"
 echo Containers: $CONTAINERS
 echo -n User
 whoami
