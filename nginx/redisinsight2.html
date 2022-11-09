@@ -20,12 +20,17 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" integrity="sha512-MOCpqoRoisCTwJ8vQQiciZv0qcpROCidek3GTFS6KTk2+y7munJIlKCVkFCYY+p3ErYFXCjmFjnfTTRSC1OHWQ==" crossorigin="anonymous"></script>
 
             <script>
-                fetch('/redisinsight2/js/bundle.1d09ff3bb86c4399e0c8.min.js')
+                const BASE_URL = '/redisinsight2/';
+
+                fetch(BASE_URL + 'js/bundle.1d09ff3bb86c4399e0c8.min.js')
                     .then(res => res.text())
                     .then(text => {
                         //__webpack_require__.u=e=>"js/"
-                        text = text.replace(/(__webpack_require__.[=>a-z]+)"js\/"/, '$1"redisinsight2/js/"')
-                            .replace(/(baseURL:"".concat\(window.location.origin,)"\/api\/"/g, '$1"/redisinsight2/api/"');
+                        text = text.replace(/(__webpack_require__.[=>a-z]+)"js\/"/, `$1"${BASE_URL.replace('/','')}js/"`)
+                            .replace(/(baseURL:"".concat\(window.location.origin,)"\/api\/"/g, `$1"${BASE_URL}api/"`)
+                            .replace(/({forceNew:!1,rejectUnauthorized:!1,reconnection:!0)/, `$1,
+                                path:'${BASE_URL}socket.io',
+                                transports: ['websocket']`);
 
                         const src = URL.createObjectURL(new Blob([text], {
                             type: 'text/javascript'
