@@ -91,12 +91,8 @@ case $1 in
     [ $(uname -m) = x86_64 ] && ARCH=amd64
 
     DOCKER=/var/run/docker.sock
-    PODMAN=/run/user/1000/podman/podman.sock
-    SRC=$DOCKER
-    docker --version | grep Docker || {
-        SRC=$PODMAN
-        systemctl --user is-active podman.socket || systemctl --user restart podman.socket
-    }
+    SRC=/run/user/1000/podman/podman.sock
+    which podman || SRC=$DOCKER
 
     echo Mounting $SRC
 
@@ -197,18 +193,6 @@ rtsp-server)
         --net network \
         -v php-aws:/mnt/ptais/php-aws -v /mnt/ptais:/mnt/ptais \
         bitnami/php-fpm
-    ;;
-
-\
-    cloud9)
-    docker run --name cloud9 -d \
-        --net network -p 8080:8000 \
-        -e PUID=1000 -e PGID=1000 -e TZ=Asia/Seoul \
-        -v /Volumes/dev:/code \
-        linuxserver/cloud9
-    #  -e GITURL=https://github.com/linuxserver/docker-cloud9.git \
-    #  -e USERNAME= \
-    #  -e PASSWORD= \
     ;;
 
 \
