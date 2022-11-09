@@ -40,7 +40,7 @@ export const PORTAINER_ENDPOINT = {
 
 Object.entries(NODES).forEach(([Name, Params]) => NODES[Name] = Object.assign({
     username,
-    privateKey: homedir() + '/.ssh/id_rsa',
+    privateKeyPath: homedir() + '/.ssh/id_rsa',
 }, Params));
 console.log(NODES);
 
