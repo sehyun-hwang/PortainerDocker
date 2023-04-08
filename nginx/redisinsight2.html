@@ -5,48 +5,21 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
         <title>RedisInsight</title>
-        <base href="/redisinsight2" />
-        <link href="/redisinsight2/main.1d09ff3bb86c4399e0c8.css" rel="stylesheet">
-    </head>
-
+        <base href="/" />
+        <link href="/redis-stack/main.css" rel="stylesheet">
     </head>
 
     <body>
-
-        <body>
-            <div id="root"></div>
-
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" integrity="sha512-8Q6Y9XnTbOE+JNvjBQwJ2H8S+UV4uA6hiRykhdtIyDYZ2TprdNmWOUaKdGzOhyr4dCyk287OejbPvwl7lrfqrQ==" crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" integrity="sha512-MOCpqoRoisCTwJ8vQQiciZv0qcpROCidek3GTFS6KTk2+y7munJIlKCVkFCYY+p3ErYFXCjmFjnfTTRSC1OHWQ==" crossorigin="anonymous"></script>
-
-            <script>
-                const BASE_URL = '/redisinsight2/';
-
-                fetch(BASE_URL + 'js/bundle.1d09ff3bb86c4399e0c8.min.js')
-                    .then(res => res.text())
-                    .then(text => {
-                        //__webpack_require__.u=e=>"js/"
-                        text = text.replace(/(__webpack_require__.[=>a-z]+)"js\/"/, `$1"${BASE_URL.replace('/','')}js/"`)
-                            .replace(/(baseURL:"".concat\(window.location.origin,)"\/api\/"/g, `$1"${BASE_URL}api/"`)
-                            .replace(/({forceNew:!1,rejectUnauthorized:!1,reconnection:!0)/, `$1,
-                                path:'${BASE_URL}socket.io',
-                                transports: ['websocket']`);
-
-                        const src = URL.createObjectURL(new Blob([text], {
-                            type: 'text/javascript'
-                        }));
-
-                        const script = document.createElement('script');
-                        script.src = src;
-                        document.body.appendChild(script);
-                        return new Promise(resolve => script.addEventListener('load', resolve));
-                    })
-                    .then(() => window.dispatchEvent(new Event('load')))
-                    .catch(error => {
-                        console.error(error);
-                        alert(error);
-                    });
-            </script>
-        </body>
+        <div id="root"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" integrity="sha512-8Q6Y9XnTbOE+JNvjBQwJ2H8S+UV4uA6hiRykhdtIyDYZ2TprdNmWOUaKdGzOhyr4dCyk287OejbPvwl7lrfqrQ==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" integrity="sha512-MOCpqoRoisCTwJ8vQQiciZv0qcpROCidek3GTFS6KTk2+y7munJIlKCVkFCYY+p3ErYFXCjmFjnfTTRSC1OHWQ==" crossorigin="anonymous"></script>
+        <script src="/redis-stack/js/bundle.runtime.min.js"></script>
+        <script src="/redis-stack/js/bundle.elasticVendor.min.js"></script>
+        <script src="/redis-stack/js/bundle.monacoVendor.min.js"></script>
+        <script src="/redis-stack/js/bundle.utilityVendor.min.js"></script>
+        <script src="/redis-stack/js/bundle.reactVendor.min.js"></script>
+        <script src="/redis-stack/js/bundle.number.min.js"></script>
+        <script src="/redis-stack/js/bundle.main.min.js"></script>
+    </body>
 
 </html>

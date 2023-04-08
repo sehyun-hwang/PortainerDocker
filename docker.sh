@@ -36,7 +36,7 @@ case $1 in
 
 \
     nginx)
-    docker start pgadmin portainer stream registry-browser redisinsight
+    #docker start pgadmin portainer registry-browser redisinsight
 
     docker pod ls -f=status=degraded -q | grep nginx-pod && docker pod rm nginx-pod
     docker pod create --name nginx-pod --net network \
@@ -50,8 +50,9 @@ case $1 in
         -v /mnt/Docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
         -v /mnt/Docker/nginx:/etc/nginx/conf:ro \
         -v /mnt:/mnt:ro -v /volatile/src:/volatile:ro \
+        --security-opt label=disable \
         --log-opt max-size=100m \
-        ranadeeppolavarapu/nginx-http3
+        ghcr.io/ranadeeppolavarapu/nginx-http3:9c85a41
     ;;
 
 \
@@ -59,13 +60,18 @@ case $1 in
     docker run --name redisinsight -d $ARGS \
         --net network \
         -v redisinsight:/db \
+        -e RIPROXYPATH=/redisinsight -e RIPROXYENABLE=True \
         redislabs/redisinsight
+
+    docker kill -s HUP nginx
     ;;
 
 \
     redisinsight-2)
     docker run -d --name redisinsight-2 $ARGS \
-        --net network -p 6380:6379 \
+        --net network \
+        -v /mnt/Docker/redis-insight-2.sh:/entrypoint.sh:ro \
+        -v //mnt/Docker/nginx/redisinsight2.html:/opt/redis-stack/share/redisinsight/ui/dist/index.html:ro \
         -v /mnt/Docker/redisinsight-2:/data \
         redis/redis-stack
 
@@ -85,23 +91,18 @@ case $1 in
 
 \
     portainer-agent)
-    #sudo systemctl disable firewalld
-
-    ARCH=arm64
-    [ $(uname -m) = x86_64 ] && ARCH=amd64
-
     DOCKER=/var/run/docker.sock
     SRC=/run/user/1000/podman/podman.sock
-    which podman || SRC=$DOCKER
+    docker --version | grep podman || SRC=$DOCKER
 
     echo Mounting $SRC
 
-    IMAGE=$(curl "https://registry.hub.docker.com/v2/repositories/portainer/agent/tags?name=linux-$ARCH&page_size=2" | jq -r .results[1].name)
     docker run -d --name portainer-agent $ARGS \
-        --restart unless-stopped --net network \
+        --restart unless-stopped \
+        --net network -p 9001:9001 \
         -v $SRC:$DOCKER \
         --security-opt label=disable \
-        portainer/agent:$IMAGE
+        portainer/agent
     ;;
 
 \
@@ -157,7 +158,7 @@ case $1 in
     ;;
 
 \
-rtsp-server)
+    rtsp-server)
     docker run -d --name rtsp-server \
         -e RTSP_PROTOCOLS=tcp \
         -p 8554:8554 -p 1935:1935 \
