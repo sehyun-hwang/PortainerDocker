@@ -6,7 +6,8 @@
     },
     "dependencies": {
         "expiry-map": "^2.0.0",
+        "ngrok": "^4.3.3",
         "node-ssh": "^13.0.0",
-        "p-memoize": "^6.0.1"
+        "p-memoize": "^7.1.1"
     }
 }

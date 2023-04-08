@@ -84,7 +84,9 @@ export async function Script(docker, Command, Data) {
 
 
 const checkLatestDigests = pMemoize(image => {
-    let [repository, tag='latest'] = image.split(':');
+    let [repository, tag = 'latest'] = image.split(':');
+    if (repository.includes('.'))
+        return [image, null];
     if (!repository.includes('/'))
         repository = 'library/' + repository;
     console.log('Searching Docker Hub', { repository, tag });
@@ -106,11 +108,11 @@ export async function Pull(docker) {
         docker.listImages(),
         ...IMAGES.map(checkLatestDigests)
     ]);
-    localImages = localImages.map(({ Digests }) => Digests);
+    localImages = localImages.filter(({ RepoDigests }) => RepoDigests).map(({ RepoDigests: [Digest] }) => Digest.split('@')[1]);
     latestDigests = Object.fromEntries(latestDigests);
-    //console.log(localImages, latestDigests);
+    console.log(localImages, latestDigests, IMAGES);
 
-    const pullRequests = IMAGES.filter(image => localImages.some(localImage => latestDigests[image].has(localImage)));
+    const pullRequests = IMAGES.filter(image => localImages.some(localImage => latestDigests[image] ? !latestDigests[image].has(localImage) : true));
 
     if (!pullRequests.length)
         return console.log('All images are up to date');
@@ -118,7 +120,7 @@ export async function Pull(docker) {
     console.log('Pulling', pullRequests);
     const { followProgress, host } = docker.modem;
 
-    return Promise.all(pullRequests.map(Image => docker.pull(Image).then(stream => {
+    return Promise.all(pullRequests.map(Image => docker.pull(Image.replace('library/')).then(stream => {
             let args;
             const promise = new Promise((..._args) => args = _args);
             const [resolve, reject] = args;

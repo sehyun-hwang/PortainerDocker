@@ -3,7 +3,7 @@ import { HOST } from './CONFIG.js';
 
 
 export const Commands = [{
-    Image: "centos",
+    Image: "quay.io/centos/centos:stream9-minimal",
     name: "centos",
     Cmd: ["sleep", "infinity"]
 }, {
