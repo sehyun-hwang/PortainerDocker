@@ -50,7 +50,7 @@ app
 
 
         .use(proxy.createProxyMiddleware((path, req) =>
-            /^(containers|docker|containerd|Buildah|skopeo)\//.test(req.headers['user-agent']) || req.headers['user-agent'].startsWith('Faraday'), {
+            /^(containers|docker|containerd|Buildah|skopeo|buildkit)\//.test(req.headers['user-agent']) || req.headers['user-agent'].startsWith('Faraday'), {
                 target: "http://registry.network:5000",
                 onError,
             }));
