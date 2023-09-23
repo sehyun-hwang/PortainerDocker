@@ -52,9 +52,9 @@ export async function init(params) {
 
 
     if (!PortainerInspect)
-        return Promise.reject('Container "portainer-agent" is not found. Try docker run --name portaienr-agent.');
+        return Promise.reject('Container "portainer-agent" is not found. Try docker run --name portainer-agent.');
     if (!PortainerInspect.State.Running)
-        return Promise.reject('Container "portainer-agent" is not running. Try docker start portaienr-agent.');
+        return Promise.reject('Container "portainer-agent" is not running. Try docker start portainer-agent.');
 
     if (SocatInspect) {
         console.log('Starting socat');

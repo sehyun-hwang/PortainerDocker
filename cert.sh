@@ -8,6 +8,7 @@ CMD=`$SSH which docker` || CMD=`$SSH which /usr/local/bin/docker` || exit 1
 CMD="$SSH $CMD"
 echo $CMD
 
+sudo docker pull bash
 echo 'cat /cert/live/hwangsehyun.com/{fullchain.pem,privkey.pem}' \
 | sudo docker run -i --rm -w /cert -v cert:/cert bash \
 | $CMD run -i --rm -v cert:/cert \

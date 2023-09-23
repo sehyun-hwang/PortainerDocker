@@ -108,11 +108,11 @@ export async function Pull(docker) {
         docker.listImages(),
         ...IMAGES.map(checkLatestDigests)
     ]);
-    localImages = localImages.filter(({ RepoDigests }) => RepoDigests).map(({ RepoDigests: [Digest] }) => Digest.split('@')[1]);
+    localImages = localImages.filter(({ RepoDigests }) => RepoDigests?.length).map(({ RepoDigests: [Digest] }) => Digest.split('@')[1]);
     latestDigests = Object.fromEntries(latestDigests);
-    console.log(localImages, latestDigests, IMAGES);
+    console.log(localImages, latestDigests);
 
-    const pullRequests = IMAGES.filter(image => localImages.some(localImage => latestDigests[image] ? !latestDigests[image].has(localImage) : true));
+    const pullRequests = IMAGES.filter(image => localImages.some(localImage => latestDigests[image] ? latestDigests[image].has(localImage) : true));
 
     if (!pullRequests.length)
         return console.log('All images are up to date');
