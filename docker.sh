@@ -52,7 +52,7 @@ case $1 in
         -v /mnt:/mnt:ro -v /volatile/src:/volatile:ro \
         --security-opt label=disable \
         --log-opt max-size=100m \
-        ghcr.io/ranadeeppolavarapu/nginx-http3:9c85a41
+        nginx:alpine
     ;;
 
 \
@@ -60,8 +60,11 @@ case $1 in
     docker run --name redisinsight -d $ARGS \
         --net network \
         -v redisinsight:/db \
-        -e RIPROXYPATH=/redisinsight -e RIPROXYENABLE=True \
-        redislabs/redisinsight
+        --security-opt label=disable -u root \
+        -e RIPROXYPATH=/redisinsight -e RIPROXYENABLE=True -e RITRUSTEDORIGINS=https://proxy.hwangsehyun.com \
+        --entrypoint python \
+        redislabs/redisinsight \
+        entry.pyc
 
     docker kill -s HUP nginx
     ;;
@@ -110,6 +113,7 @@ case $1 in
     docker run --name pgadmin -d $ARGS \
         --net network --restart unless-stopped \
         -v /mnt/Docker/pgadmin-servers.json:/pgadmin4/servers.json \
+        --security-opt label=disable \
         -e SCRIPT_NAME=/pgadmin \
         -e PGADMIN_DEFAULT_EMAIL=hwanghyun3@gmail.com -e PGADMIN_DEFAULT_PASSWORD=gTff8ULka4NuJsV \
         dpage/pgadmin4
@@ -145,16 +149,6 @@ case $1 in
         -v /run/user/1000/podman/podman.sock:/var/run/docker.sock:ro \
         --volume=stats:/opt/docker-stats/db --security-opt label=disable \
         virtualzone/docker-container-stats
-    ;;
-
-\
-    aws)
-    docker run --name aws -d \
-        --restart unless-stopped \
-        --entrypoint sh \
-        -v /mnt:/mnt -v /volatile:/volatile \
-        amazon/aws-cli \
-        -c 'sleep infinity'
     ;;
 
 \
@@ -285,3 +279,9 @@ case $1 in
 esac
 
 docker logs --tail 100 $1
+
+# Podman requirements
+# echo net.ipv4.ip_unprivileged_port_start=80 | sudo tee -a /etc/sysctl.conf
+# sudo sysctl -p /etc/sysctl.conf
+# systemctl --user enable podman-restart --now
+# systemctl --user enable podman.socket --now
