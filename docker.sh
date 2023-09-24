@@ -45,14 +45,17 @@ case $1 in
     docker run --name nginx -d $ARGS \
         --restart unless-stopped \
         --pod nginx-pod \
+        -e NGINX_ENTRYPOINT_LOCAL_RESOLVERS=true \
+        -e NGINX_ENVSUBST_TEMPLATE_DIR=/etc/nginx/conf \
         -v /etc/localtime:/etc/localtime:ro \
         -v cert:/cert:ro \
-        -v /mnt/Docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+        -v /mnt/Docker/nginx/etc-hosts.sh:/docker-entrypoint.d/etc-hosts.sh:ro \
         -v /mnt/Docker/nginx:/etc/nginx/conf:ro \
         -v /mnt:/mnt:ro -v /volatile/src:/volatile:ro \
         --security-opt label=disable \
         --log-opt max-size=100m \
-        nginx:alpine
+        nginx:alpine \
+        nginx -g 'daemon off;' -c /etc/nginx/conf/nginx.conf
     ;;
 
 \
