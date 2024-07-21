@@ -1,0 +1,127 @@
+version: '3'
+
+services:
+  redisinsight:
+    image: redislabs/redisinsight:1.14.0
+    restart: unless-stopped
+    entrypoint: python
+    command: entry.pyc
+    volumes:
+      - redisinsight:/db
+    user: root
+    environment:
+      RIPROXYPATH: /redisinsight
+      RIPROXYENABLE: 'True'
+      RITRUSTEDORIGINS: https://proxy.hwangsehyun.com
+
+  redisinsight-2:
+    image: redis/redisinsight
+    restart: unless-stopped
+    volumes:
+      - redisinsight-2:/data
+    environment:
+      RI_PROXY_PATH: /redisinsight-2
+    user: root
+
+  portainer:
+    image: portainer/portainer-ce:alpine
+    restart: unless-stopped
+    volumes:
+      - portainer:/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    # security_opt:
+    #   - label=disable
+    volumes:
+      - ./pgadmin-servers.json:/pgadmin4/servers.json
+    environment:
+      - SCRIPT_NAME=/pgadmin
+      - PGADMIN_DEFAULT_EMAIL=hwanghyun3@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=gTff8ULka4NuJsV
+
+  stream:
+    #image: shurco/nginx-push-stream-module
+    # ports:
+    #   - "8081:80"
+    image: paskalmaksim/nginx-push-stream-module:23a5c40
+    restart: unless-stopped
+    command:
+      - sh
+      - -c
+      - >
+        wget https://raw.githubusercontent.com/shurco/nginx-push-stream-module/master/nginx.conf -O /etc/nginx/nginx.conf
+        && mkdir -p /usr/local/nginx/conf /etc/nginx/logs
+        && ln -fs /etc/nginx/mime.types /usr/local/nginx/conf/mime.types
+        && nginx
+    user: root
+
+  couchdb:
+    image: couchdb
+    restart: unless-stopped
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+    volumes:
+      - couchdb:/opt/couchdb/data
+
+  registry-browser-init:
+    image: klausmeyer/docker-registry-browser
+    restart: unless-stopped
+    command:
+      - node
+      - -e
+      - |
+        const fs = require('fs');
+        const ENTRYPOINT_FILE = '/mnt/docker-entrypoint.sh';
+        try {
+          accessSync(ENTRYPOINT_FILE, fs.constants.X_OK);
+          process.exit();
+        } catch {}
+        fs.writeFileSync(ENTRYPOINT_FILE, `#!/bin/sh -e
+        export SECRET_KEY_BASE=$${require('crypto').randomBytes(64).toString('hex')}
+        `);
+        fs.appendFileSync(ENTRYPOINT_FILE, fs.readFileSync('/docker-entrypoint.sh'));
+        fs.chmodSync(ENTRYPOINT_FILE, 0o777);
+    working_dir: /mnt
+    volumes:
+      - registry-browser:/mnt
+    user: root
+
+  registry-browser:
+    image: klausmeyer/docker-registry-browser
+    restart: unless-stopped
+    depends_on:
+      - registry-browser-init
+    entrypoint: /mnt/docker-entrypoint.sh
+    command:
+      - web
+    environment:
+      DOCKER_REGISTRY_URL: https://nextlab.hwangsehyun.com:41443
+      SCRIPT_NAME: /registrybrowser
+      RAILS_RELATIVE_URL_ROOT: /registrybrowser
+    volumes:
+      - registry-browser:/mnt
+#     secrets:
+#       - my_secret
+
+  container-stats:
+    image: virtualzone/docker-container-stats
+    volumes:
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:ro
+      - container-stats:/opt/docker-stats/db
+    security_opt:
+      - label=disable
+
+# secrets:
+#   my_secret:
+#     file: ./my_secret.txt
+
+volumes:
+  redisinsight:
+  redisinsight-2:
+  portainer:
+  couchdb:
+  registry-browser:
+  container-stats:
